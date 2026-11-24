@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MultiDownloader · Download videos</title>
+  <meta name="description" content="Paste a video or playlist link, choose quality, and download." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script>try{document.documentElement.dataset.theme=localStorage.getItem("md-theme")||"dark"}catch(e){}</script>
+  <link rel="stylesheet" href="styles.css?v=4" />
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">⤓</span>
+      <b>Multi<em>Downloader</em></b>
+    </div>
+    <p class="tagline">Fast <i>•</i> Simple <i>•</i> Multiple Platforms</p>
+    <button id="theme-btn" class="iconbtn" type="button" aria-label="Switch between dark and light">☾</button>
+  </header>
+
+  <aside class="side" aria-label="Menu">
+    <nav>
+      <a class="nav active" href="#"><span class="ico home">⌂</span>Home</a>
+      <button class="nav" type="button" data-pick="youtube"><span class="ico yt">▶</span>YouTube</button>
+      <button class="nav" type="button" data-pick="facebook"><span class="ico fb">f</span>Facebook</button>
+      <button class="nav" type="button" data-pick="tiktok"><span class="ico tt">♪</span>TikTok</button>
+      <button class="nav" type="button" data-pick="x"><span class="ico xx">X</span>X (Twitter)</button>
+      <button class="nav" type="button" data-pick="instagram"><span class="ico ig">◎</span>Instagram</button>
+      <button class="nav" type="button" data-pick="ok"><span class="ico ok">OK</span>OK.ru</button>
+    </nav>
+    <div class="promo">
+      <span class="ico bolt">⚡</span>
+      <b>Paste. Pick. Download.</b>
+      <p>High quality, multiple formats, all in one place.</p>
+    </div>
+  </aside>
+
+  <main class="main">
+    <section class="hero">
+      <h1>Download Videos from<br /><span class="c-yt">YouTube</span>, <span class="c-fb">Facebook</span>, <span class="c-tt">TikTok</span> and X</h1>
+      <p>Paste a video or playlist link from any site, choose your quality, and download.</p>
+
+      <form id="url-form" novalidate>
+        <div class="command">
+          <span class="link-ico" aria-hidden="true">🔗</span>
+          <label for="url-input" class="sr-only">Video or playlist URL</label>
+          <input id="url-input" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="Paste any video or playlist URL here…" aria-describedby="url-error" />
+          <button id="fetch-btn" type="submit" class="btn primary"><span class="btn-label">Fetch Info</span><span class="spinner" aria-hidden="true"></span></button>
+        </div>
+        <p id="url-error" class="error" role="alert" hidden></p>
+      </form>
+
+      <ul class="sites" aria-label="Supported sites">
+        <li data-site="youtube"><span class="ico yt">▶</span>YouTube</li>
+        <li data-site="facebook"><span class="ico fb">f</span>Facebook</li>
+        <li data-site="tiktok"><span class="ico tt">♪</span>TikTok</li>
+        <li data-site="x"><span class="ico xx">X</span>X</li>
+        <li data-site="instagram"><span class="ico ig">◎</span>Instagram</li>
+        <li data-site="ok"><span class="ico ok">OK</span>OK.ru</li>
+        <li class="more">+ many more sites</li>
+      </ul>
+      <p id="notice" class="notice" hidden></p>
+    </section>
+
+    <!-- Unfinished downloads (resume after a restart) -->
+    <section id="unfinished" class="panel" hidden aria-label="Unfinished downloads">
+      <div class="plhead"><div><h2>Unfinished downloads</h2><p>These stopped before finishing. Resume continues from where each one stopped.</p></div></div>
+      <ul id="unf-list" class="pllist"></ul>
+    </section>
+
+    <!-- Single video -->
+    <section id="single" class="panel" hidden aria-label="Video details">
+      <div class="vhead">
+        <div class="thumb"><img id="thumb" alt="" referrerpolicy="no-referrer" /><span id="duration" class="dur"></span></div>
+        <div class="vmeta"><h2 id="title"></h2><p id="channel"></p></div>
+      </div>
+
+      <div class="namerow">
+        <label for="file-name" class="sec">File name</label>
+        <input id="file-name" type="text" maxlength="100" autocomplete="off" spellcheck="false" placeholder="Name of the saved file" />
+      </div>
+
+      <div id="video-section">
+        <h3 class="sec">Video Quality</h3>
+        <div id="video-options" class="qgrid" role="radiogroup" aria-label="Video quality"></div>
+      </div>
+      <h3 class="sec">Audio Only</h3>
+      <div id="audio-options" class="qgrid audio" role="radiogroup" aria-label="Audio format"></div>
+
+      <div id="subs-section" hidden>
+        <h3 class="sec">Subtitles</h3>
+        <div class="subrow">
+          <select id="sub-lang" aria-label="Subtitle language"></select>
+          <select id="sub-fmt" aria-label="Subtitle format"><option value="srt">SRT</option><option value="vtt">VTT</option></select>
+          <button id="sub-btn" class="btn ghost" type="button"><span class="btn-label">Download subtitles</span><span class="spinner" aria-hidden="true"></span></button>
+        </div>
+        <p id="sub-msg" class="tip" hidden></p>
+      </div>
+
+      <div class="summary">
+        <div><b id="sel-title">Selected</b><small id="sel-size"></small></div>
+        <div class="sumbtns">
+          <button id="watch-btn" class="btn ghost" type="button" title="Plays the whole video here so you can scrub through it. Nothing is loaded until you press it."><span class="btn-label">Watch</span><span class="spinner" aria-hidden="true"></span></button>
+          <button id="preview-btn" class="btn ghost" type="button" title="Plays the video in short pieces. Drag the bar to choose where to watch from. Nothing is fetched until you press it."><span class="btn-label">Preview</span><span class="spinner" aria-hidden="true"></span></button>
+          <button id="download-btn" class="btn primary" disabled><span class="btn-label">Download</span><span class="spinner" aria-hidden="true"></span></button>
+        </div>
+      </div>
+      <div id="preview-box" class="preview" hidden>
+        <video id="preview-video" playsinline preload="none"></video>
+        <audio id="preview-audio" preload="none" hidden></audio>
+        <div class="seekrow">
+          <button id="pv-play" class="iconbtn" type="button" aria-label="Pause">⏸</button>
+          <input id="pv-seek" type="range" min="0" max="0" step="1" value="0" aria-label="Choose where to watch from" />
+          <span id="pv-time" class="pvtime">0:00</span>
+          <button id="pv-mute" class="iconbtn" type="button" aria-label="Mute">🔊</button>
+          <button id="pv-full" class="iconbtn" type="button" aria-label="Full screen">⛶</button>
+        </div>
+        <div class="speed" role="group" aria-label="Playback speed"></div>
+        <label class="chk small"><input id="pv-keep" type="checkbox" checked /> Keep playing the next pieces</label>
+        <small id="pv-note"></small>
+        <small><button id="pv-join" class="linkbtn" type="button">Save what I watched as one file</button></small>
+      </div>
+      <div id="watch-box" class="preview" hidden>
+        <iframe id="watch-frame" title="YouTube player" allow="accelerometer; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" hidden></iframe>
+        <video id="watch-video" controls playsinline preload="metadata" hidden></video>
+        <div class="speed" role="group" aria-label="Playback speed"></div>
+        <small id="watch-note"></small>
+        <small><button id="watch-file" class="linkbtn" type="button" hidden>Save what I watched as one file</button></small>
+      </div>
+      <p id="download-error" class="error" role="alert" hidden></p>
+    </section>
+
+    <!-- Account (public profile info) -->
+    <section id="profile" class="panel profile" hidden aria-label="Account">
+      <img id="pf-avatar" class="pf-avatar" alt="" referrerpolicy="no-referrer" />
+      <div class="pf-main">
+        <h2 id="pf-name"></h2>
+        <p id="pf-handle" class="pf-handle"></p>
+        <ul id="pf-stats" class="pf-stats"></ul>
+        <p id="pf-desc" class="pf-desc"></p>
+        <a id="pf-link" class="pf-link" target="_blank" rel="noopener noreferrer">Open profile</a>
+        <small class="pf-note">Public profile information only, as shown on the platform itself.</small>
+      </div>
+    </section>
+
+    <!-- Playlist -->
+    <section id="playlist" class="panel" hidden aria-label="Playlist">
+      <div class="plhead">
+        <div><h2 id="pl-title"></h2><p id="pl-meta"></p></div>
+      </div>
+      <div class="pltools">
+        <label class="chk"><input id="pl-all" type="checkbox" checked /> Select all</label>
+        <span class="grow"></span>
+        <button id="pl-sizes" class="btn ghost" type="button" hidden>Show all sizes</button>
+        <label for="pl-quality" class="sr-only">Quality for all</label>
+        <select id="pl-quality"></select>
+        <button id="pl-apply" class="btn ghost" type="button">Apply to all</button>
+      </div>
+      <ul id="pl-list" class="pllist"></ul>
+      <div class="plfoot">
+        <div><b id="pl-total"></b><small>Your browser may ask to allow multiple downloads. Choose “Allow”.</small></div>
+        <button id="pl-download" class="btn primary"><span class="btn-label">Download selected</span><span class="spinner" aria-hidden="true"></span></button>
+      </div>
+    </section>
+
+    <!-- Progress -->
+    <section id="status" class="status" hidden aria-live="polite">
+      <div class="st-text"><b id="status-title"></b><small id="status-text"></small></div>
+      <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="bar-fill"></i></div>
+      <span id="status-pct" class="pct">0%</span>
+      <button id="cancel-btn" class="btn ghost" type="button">Cancel</button>
+    </section>
+
+    <section class="features" aria-label="Features">
+      <div class="feat-card"><span class="fico"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg></span><b>High Quality</b><p>Up to 4K when the video has it.</p></div>
+      <div class="feat-card"><span class="fico"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M6 2h9l5 5v15H6zm8 1.5V8h4.5zM9 13h8v2H9zm0 4h8v2H9z"/></svg></span><b>Multiple Formats</b><p>MP4 video, MP3 and M4A audio.</p></div>
+      <div class="feat-card"><span class="fico"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5zm-1 14-4-4 1.4-1.4L11 13.2l4.6-4.6L17 10z"/></svg></span><b>Private</b><p>Runs on your own computer. No ads, no account.</p></div>
+      <div class="feat-card"><span class="fico"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M3 4h18v12H3zm5 14h8v2H8z"/></svg></span><b>Any Browser</b><p>Works on desktop and phone browsers.</p></div>
+    </section>
+
+    <!-- Downloads: several can run at the same time -->
+    <section id="downloads" class="panel" hidden aria-label="Downloads">
+      <div class="plhead"><div><h2>Downloads</h2><p>Several downloads can run at the same time. Closing this page does not stop them.</p></div><button id="dl-clear" class="linkbtn" type="button">Clear finished</button></div>
+      <ul id="dl-list" class="pllist"></ul>
+    </section>
+
+    <footer class="disclaimer">Only download content you own, that is public domain or Creative Commons, or that you have permission to save. Downloading may violate each platform’s Terms of Service.</footer>
+  </main>
+
+  <aside class="right" aria-label="Info">
+    <div class="box">
+      <h3>Download speed</h3>
+      <label class="tip" for="sp-mode">Mode</label>
+      <select id="sp-mode" style="width:100%"><option value="normal">Normal</option><option value="fast">Fast</option><option value="max">Maximum</option></select>
+      <label class="tip" for="sp-limit" style="display:block;margin-top:.7rem">Speed limit</label>
+      <select id="sp-limit" style="width:100%"><option value="0">No limit</option><option value="1">1 MB/s</option><option value="2">2 MB/s</option><option value="5">5 MB/s</option><option value="10">10 MB/s</option></select>
+      <p id="sp-note" class="tip" style="margin-top:.7rem"></p>
+    </div>
+    <div class="box">
+      <h3>Popular Platforms</h3>
+      <div class="plat"><span class="ico yt">▶</span><div><b>YouTube</b><small>Videos, Shorts, Playlists</small></div><i class="chev">›</i></div>
+      <div class="plat"><span class="ico fb">f</span><div><b>Facebook</b><small>Videos, Reels</small></div><i class="chev">›</i></div>
+      <div class="plat"><span class="ico tt">♪</span><div><b>TikTok</b><small>Videos, Slideshows</small></div><i class="chev">›</i></div>
+      <div class="plat"><span class="ico xx">X</span><div><b>X (Twitter)</b><small>Videos, GIFs</small></div><i class="chev">›</i></div>
+      <div class="plat"><span class="ico ig">◎</span><div><b>Instagram</b><small>Reels, Posts</small></div><i class="chev">›</i></div>
+      <div class="plat"><span class="ico ok">OK</span><div><b>OK.ru</b><small>Videos, Live</small></div><i class="chev">›</i></div>
+    </div>
+    <div class="box">
+      <h3>Other sites</h3>
+      <div class="osrow" aria-hidden="true"><span class="os vm">V</span><span class="os dm">d</span><span class="os tw">T</span><span class="os rd">r</span><span class="os more">+</span></div>
+      <p class="tip">Any other link works too (Vimeo, Dailymotion, Reddit, Twitch clips, news sites…). If the site is supported, it will be fetched. DRM-protected or login-only videos can’t be downloaded.</p>
+    </div>
+    <div class="box">
+      <h3>Instagram</h3>
+      <p class="tip">Public reels and posts usually work. If Instagram asks for a login, start the server with your browser’s login (see the note in the README).</p>
+    </div>
+    <div class="box">
+      <h3>Accounts</h3>
+      <p class="tip">Choose YouTube or TikTok on the left, then type <b>@username</b> (or paste the profile link) to see the account’s public info and latest videos.</p>
+    </div>
+    <div class="box">
+      <h3>Playlists</h3>
+      <p class="tip">Paste a YouTube playlist link. You will see every video in it, so you can pick what to download.</p>
+    </div>
+  </aside>
+</div>
+<script src="/vendor/hls.min.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js';document.head.appendChild(s)"></script>
+<button id="dl-fab" class="dlfab" type="button" hidden></button>
+<script src="speed.js?v=4"></script>
+<script src="app.js?v=4"></script>
+</body>
+</html>

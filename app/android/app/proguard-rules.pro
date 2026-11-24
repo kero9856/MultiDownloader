@@ -1,0 +1,5 @@
+# youtubedl-android loads Python/ffmpeg/aria2c helpers and Jackson models reflectively
+-keep class com.yausername.** { *; }
+-dontwarn com.yausername.**
+-keep class com.fasterxml.jackson.** { *; }
+-dontwarn com.fasterxml.jackson.**
