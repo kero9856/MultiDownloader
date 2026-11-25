@@ -24,6 +24,7 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        ndk { abiFilters.add("arm64-v8a") }
     }
 
     // youtubedl-android ships python/ffmpeg/aria2c as native libs that must be extracted to disk.
