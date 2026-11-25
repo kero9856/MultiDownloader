@@ -35,58 +35,76 @@ class _ShellState extends State<Shell> {
     if (i == 2) context.read<DownloadManager>().refreshHistory();
   }
 
+  /// The gear icon: Settings + the tools that used to sit in the app bar.
+  void _openMenu() {
+    final m = context.read<DownloadManager>();
+    showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      builder: (sheet) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
+        ListTile(
+          leading: const Icon(Icons.settings_outlined), title: const Text('Settings'),
+          onTap: () { Navigator.pop(sheet); Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsPage())); },
+        ),
+        ListTile(
+          leading: const Icon(Icons.system_update_alt), title: const Text('Update yt-dlp'), enabled: m.ready,
+          onTap: () async {
+            Navigator.pop(sheet);
+            final msg = ScaffoldMessenger.of(context);
+            msg.showSnackBar(const SnackBar(content: Text('Updating yt-dlp…')));
+            try {
+              final r = await m.updateYtDlp();
+              msg.showSnackBar(SnackBar(content: Text(r.contains('ALREADY') ? 'yt-dlp is already up to date' : 'yt-dlp updated ($r)')));
+            } catch (e) { msg.showSnackBar(SnackBar(content: Text('Update failed: $e'))); }
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.info_outline), title: const Text('Engine status'), enabled: m.ready,
+          onTap: () async {
+            Navigator.pop(sheet);
+            final d = await m.bridge.diagnose();
+            if (!mounted) return;
+            showDialog(context: context, builder: (_) => AlertDialog(
+              title: const Text('Engine status'),
+              content: Text(d.entries.map((e) => '${e.key}: ${e.value}').join('\n')),
+              actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))]));
+          },
+        ),
+        ListTile(
+          leading: Icon(widget.dark ? Icons.light_mode_outlined : Icons.dark_mode_outlined),
+          title: Text(widget.dark ? 'Switch to light mode' : 'Switch to dark mode'),
+          onTap: () { Navigator.pop(sheet); widget.onToggleTheme(); },
+        ),
+      ])),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final m = context.watch<DownloadManager>();
-    final pages = [HomePage(onStarted: () => _selectTab(1)), const DownloadsPage(), const HistoryPage()];
+    final activeCount = m.jobs.values.where((j) => j.active).length;
+    final pages = [
+      HomePage(onStarted: () => _selectTab(1), onMenu: _openMenu),
+      const DownloadsPage(),
+      const HistoryPage(),
+    ];
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('MultiDownloader'),
-        actions: [
-          IconButton(
-            tooltip: 'Update yt-dlp',
-            icon: const Icon(Icons.system_update_alt),
-            onPressed: !m.ready ? null : () async {
-              final msg = ScaffoldMessenger.of(context);
-              msg.showSnackBar(const SnackBar(content: Text('Updating yt-dlp…')));
-              try {
-                final r = await m.updateYtDlp();
-                msg.showSnackBar(SnackBar(content: Text(r.contains('ALREADY') ? 'yt-dlp is already up to date' : 'yt-dlp updated ($r)')));
-              }
-              catch (e) { msg.showSnackBar(SnackBar(content: Text('Update failed: $e'))); }
-            },
-          ),
-          IconButton(
-            tooltip: 'Engine status',
-            icon: const Icon(Icons.info_outline),
-            onPressed: !m.ready ? null : () async {
-              final d = await m.bridge.diagnose();
-              if (!context.mounted) return;
-              showDialog(context: context, builder: (_) => AlertDialog(
-                title: const Text('Engine status'),
-                content: Text(d.entries.map((e) => '${e.key}: ${e.value}').join('\n')),
-                actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))]));
-            },
-          ),
-          IconButton(tooltip: 'Settings', icon: const Icon(Icons.settings),
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsPage()))),
-          IconButton(
-            tooltip: 'Switch between dark and light',
-            icon: Icon(widget.dark ? Icons.light_mode : Icons.dark_mode),
-            onPressed: widget.onToggleTheme,
-          ),
-        ],
+      body: SafeArea(
+        bottom: false,
+        child: m.initError != null
+            ? Center(child: Padding(padding: const EdgeInsets.all(24), child: Text('Native engine failed to start:\n${m.initError}', textAlign: TextAlign.center)))
+            : !m.ready ? const Center(child: CircularProgressIndicator()) : IndexedStack(index: _tab, children: pages), // keeps Home state (fetched info) when switching tabs
       ),
-      body: m.initError != null
-          ? Center(child: Padding(padding: const EdgeInsets.all(24), child: Text('Native engine failed to start:\n${m.initError}', textAlign: TextAlign.center)))
-          : !m.ready ? const Center(child: CircularProgressIndicator()) : IndexedStack(index: _tab, children: pages), // keeps Home state (fetched info) when switching tabs
       bottomNavigationBar: NavigationBar(
         selectedIndex: _tab,
         onDestinationSelected: _selectTab,
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.link), label: 'Download'),
-          NavigationDestination(icon: Icon(Icons.downloading), label: 'Downloads'),
-          NavigationDestination(icon: Icon(Icons.history), label: 'History'),
+        destinations: [
+          const NavigationDestination(icon: Icon(Icons.link), label: 'Home'),
+          NavigationDestination(
+            icon: Badge(isLabelVisible: activeCount > 0, label: Text('$activeCount'), child: const Icon(Icons.download_outlined)),
+            selectedIcon: Badge(isLabelVisible: activeCount > 0, label: Text('$activeCount'), child: const Icon(Icons.download)),
+            label: 'Downloads'),
+          const NavigationDestination(icon: Icon(Icons.history), label: 'History'),
         ],
       ),
     );
