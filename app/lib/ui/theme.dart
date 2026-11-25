@@ -109,7 +109,7 @@ class SiteIcon extends StatelessWidget {
 }
 
 /// Rounded thumbnail with an optional caption at the bottom and an optional site badge.
-class Thumb extends StatelessWidget {
+class MediaThumb extends StatelessWidget {
   final String? url;
   final double size;
   final bool audio;
@@ -117,7 +117,7 @@ class Thumb extends StatelessWidget {
   final String? caption;
   final Site? badge;
   final double? height;
-  const Thumb({super.key, this.url, this.size = 72, this.audio = false, this.subtitle = false, this.caption, this.badge, this.height});
+  const MediaThumb({super.key, this.url, this.size = 72, this.audio = false, this.subtitle = false, this.caption, this.badge, this.height});
 
   @override
   Widget build(BuildContext context) {
