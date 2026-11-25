@@ -28,7 +28,13 @@ android {
     }
 
     // youtubedl-android ships python/ffmpeg/aria2c as native libs that must be extracted to disk.
-    packaging { jniLibs { useLegacyPackaging = true } }
+    // Only arm64-v8a is kept (phones from ~2016 on); other CPU variants are dropped to shrink the APK.
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+            excludes += setOf("**/armeabi-v7a/**", "**/x86/**", "**/x86_64/**")
+        }
+    }
 
     buildTypes {
         release {
