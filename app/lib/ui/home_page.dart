@@ -254,6 +254,75 @@ class _HomePageState extends State<HomePage> {
             Stack(children: [
               MediaThumb(url: info.thumbnail, size: 96, height: 112),
               Positioned(left: 6, bottom: 6, child: Container(
-                padding: const EdgeInsets.all(4),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                 decoration: BoxDecoration(color: const Color(0x99000000), borderRadius: BorderRadius.circular(8)),
-                child: const
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  const Icon(Icons.play_arrow_rounded, size: 14, color: Colors.white),
+                  if (info.durationText.isNotEmpty)
+                    Text(info.durationText, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
+                ]),
+              )),
+            ]),
+            const SizedBox(width: 14),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(info.title, maxLines: 3, overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: p.text)),
+              const SizedBox(height: 4),
+              Text(info.channel, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 13, color: p.sub)),
+            ])),
+          ]),
+        ),
+        _section('File name'),
+        TextField(
+          controller: _name,
+          style: TextStyle(color: p.text),
+          decoration: InputDecoration(
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: p.border)),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: p.border)),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: p.primary, width: 1.5)),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          ),
+        ),
+        _qualityChips('Video', info.video),
+        _qualityChips('Audio', info.audio),
+        _subtitles(info),
+        const SizedBox(height: 22),
+        Row(children: [
+          Expanded(child: SizedBox(
+            height: 52,
+            child: FilledButton.icon(
+              style: FilledButton.styleFrom(backgroundColor: p.primary, foregroundColor: Colors.white, shape: const StadiumBorder()),
+              icon: const Icon(Icons.download_rounded),
+              label: const Text('Download', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              onPressed: _sel == null ? null : () => _download(info),
+            ),
+          )),
+          if (!_sel!.isAudio) ...[
+            const SizedBox(width: 12),
+            SizedBox(
+              height: 52,
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(shape: const StadiumBorder(), side: BorderSide(color: p.border), foregroundColor: p.text),
+                icon: const Icon(Icons.play_circle_outline),
+                label: const Text('Watch'),
+                onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => PreviewPage(info: info, option: _sel!))),
+              ),
+            ),
+          ],
+        ]),
+      ],
+    ]);
+  }
+
+  void _download(VideoInfo info) {
+    final sel = _sel;
+    if (sel == null) return;
+    try {
+      final name = _name.text.trim();
+      context.read<DownloadManager>().start(info, sel, fileName: name.isEmpty ? null : name);
+      widget.onStarted();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+    }
+  }
+}
