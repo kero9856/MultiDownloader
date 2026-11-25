@@ -50,7 +50,7 @@ class DownloadJob {
   JobStatus status = JobStatus.queued;
   double percent = 0;
   int etaSeconds = 0;
-  String? error, filePath, publicUri, note;
+  String? error, filePath, publicUri, note, thumbnail;
   List<String> extra = const [];
   bool restartRequested = false;
   int streams = 1, stage = 0; // streams: video+audio = 2; stage: which stream yt-dlp is on (progress restarts at 0 for each)
@@ -67,16 +67,17 @@ class DownloadJob {
 class HistoryEntry {
   final String id, type, title, file, path, url, optionId;
   final String? publicUri; // MediaStore uri / public path of the copy in Download/MultiDownloader
+  final String? thumbnail;
   final int bytes, at;
   bool missing;
   HistoryEntry({required this.id, required this.type, required this.title, required this.file, required this.path,
-      required this.url, required this.optionId, required this.bytes, required this.at, this.publicUri, this.missing = false});
+      required this.url, required this.optionId, required this.bytes, required this.at, this.publicUri, this.thumbnail, this.missing = false});
   Map<String, dynamic> toJson() => {'id': id, 'type': type, 'title': title, 'file': file, 'path': path, 'bytes': bytes,
-        'url': url, 'optionId': optionId, 'at': at, 'publicUri': publicUri};
+        'url': url, 'optionId': optionId, 'at': at, 'publicUri': publicUri, 'thumbnail': thumbnail};
   factory HistoryEntry.fromJson(Map<String, dynamic> j) => HistoryEntry(
       id: j['id'] as String, type: (j['type'] ?? 'video') as String, title: (j['title'] ?? '') as String,
       file: (j['file'] ?? '') as String, path: (j['path'] ?? '') as String, url: (j['url'] ?? '') as String,
-      optionId: (j['optionId'] ?? '') as String, bytes: ((j['bytes'] ?? 0) as num).toInt(), at: ((j['at'] ?? 0) as num).toInt(), publicUri: j['publicUri'] as String?);
+      optionId: (j['optionId'] ?? '') as String, bytes: ((j['bytes'] ?? 0) as num).toInt(), at: ((j['at'] ?? 0) as num).toInt(), publicUri: j['publicUri'] as String?, thumbnail: j['thumbnail'] as String?);
 }
 
 class PlaylistEntry {
