@@ -252,62 +252,8 @@ class _HomePageState extends State<HomePage> {
           padding: const EdgeInsets.all(14),
           child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Stack(children: [
-              Thumb(url: info.thumbnail, size: 96, height: 112),
+              MediaThumb(url: info.thumbnail, size: 96, height: 112),
               Positioned(left: 6, bottom: 6, child: Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(color: const Color(0x99000000), borderRadius: BorderRadius.circular(8)),
-                child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 20),
-              )),
-              Positioned(right: 6, bottom: 6, child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                decoration: BoxDecoration(color: const Color(0x99000000), borderRadius: BorderRadius.circular(6)),
-                child: Text(info.durationText, style: const TextStyle(color: Colors.white, fontSize: 11)),
-              )),
-            ]),
-            const SizedBox(width: 14),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(info.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: p.text)),
-              const SizedBox(height: 4),
-              Text('${info.channel} • ${info.durationText}', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: p.sub)),
-              const SizedBox(height: 10),
-              TextField(
-                controller: _name, maxLength: 100, style: TextStyle(color: p.text),
-                decoration: InputDecoration(
-                  hintText: 'Rename File', counterText: '', isDense: true,
-                  suffixIcon: Icon(Icons.edit_outlined, color: p.sub, size: 20),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: p.border)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: p.border)),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                ),
-              ),
-            ])),
-          ]),
-        ),
-        _qualityChips('Video Quality', info.video),
-        _qualityChips('Audio Only', info.audio),
-        _subtitles(info),
-        const SizedBox(height: 24),
-        Row(children: [
-          Expanded(child: SizedBox(height: 54, child: OutlinedButton.icon(
-            style: OutlinedButton.styleFrom(shape: const StadiumBorder(), side: BorderSide(color: p.border), foregroundColor: p.text),
-            icon: const Icon(Icons.play_circle_outline), label: const Text('Watch'),
-            onPressed: _sel == null || _sel!.isAudio ? null : () => Navigator.push(context, MaterialPageRoute(builder: (_) => PreviewPage(info: info, option: _sel!))),
-          ))),
-          const SizedBox(width: 12),
-          Expanded(flex: 2, child: SizedBox(height: 54, child: FilledButton.icon(
-            style: FilledButton.styleFrom(backgroundColor: p.accent, foregroundColor: Colors.white, shape: const StadiumBorder()),
-            icon: const Icon(Icons.download), label: Text('Download ${_sel?.label ?? ''}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-            onPressed: _sel == null ? null : () {
-              try {
-                context.read<DownloadManager>().start(info, _sel!, fileName: _name.text);
-                widget.onStarted();
-              } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
-              }
-            },
-          ))),
-        ]),
-      ],
-    ]);
-  }
-}
+                child: const
