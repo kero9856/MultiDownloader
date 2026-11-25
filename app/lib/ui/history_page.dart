@@ -115,7 +115,7 @@ class _HistoryCard extends StatelessWidget {
     return AppCard(
       onLongPress: onDelete, // long-press = delete (also removes the file)
       child: Row(children: [
-        Thumb(url: e.thumbnail, size: 78, audio: audio, subtitle: sub, badge: audio ? null : siteOfUrl(e.url)),
+        MediaThumb(url: e.thumbnail, size: 78, audio: audio, subtitle: sub, badge: audio ? null : siteOfUrl(e.url)),
         const SizedBox(width: 14),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(e.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: p.text)),
