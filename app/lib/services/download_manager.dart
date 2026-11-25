@@ -155,14 +155,14 @@ class DownloadManager extends ChangeNotifier {
 
   DownloadJob start(VideoInfo info, QualityOption opt, {String? fileName}) =>
       _enqueue(url: info.url, optionId: opt.id, label: opt.label, isAudio: opt.isAudio,
-          title: safeName((fileName?.trim().isNotEmpty ?? false) ? fileName : info.title));
+          title: safeName((fileName?.trim().isNotEmpty ?? false) ? fileName : info.title), thumbnail: info.thumbnail);
 
   /// Playlist: queue the ticked entries at one generic quality (they run [maxConcurrentJobs] at a time).
   List<DownloadJob> startPlaylist(List<PlaylistEntry> entries, String optionId) {
     final label = playlistQualities.firstWhere((q) => q.$1 == optionId, orElse: () => (optionId, optionId)).$2;
     return [
       for (final e in entries)
-        _enqueue(url: e.url, optionId: optionId, label: label, isAudio: optionId.startsWith('a-'), title: safeName(e.title)),
+        _enqueue(url: e.url, optionId: optionId, label: label, isAudio: optionId.startsWith('a-'), title: safeName(e.title), thumbnail: e.thumbnail),
     ];
   }
 
@@ -174,12 +174,12 @@ class DownloadManager extends ChangeNotifier {
     String f(double v) => v.toStringAsFixed(1);
     return _enqueue(
       url: info.url, optionId: opt.id, label: '${opt.label} (watched part)', isAudio: false,
-      title: '${safeName(info.title)} (watched part)', extra: ['--download-sections', '*${f(a)}-${f(b)}'], idSuffix: ':w${f(a)}-${f(b)}');
+      title: '${safeName(info.title)} (watched part)', extra: ['--download-sections', '*${f(a)}-${f(b)}'], idSuffix: ':w${f(a)}-${f(b)}', thumbnail: info.thumbnail);
   }
 
   DownloadJob _enqueue({
     required String url, required String optionId, required String label, required bool isAudio, required String title,
-    List<String> extra = const [], String idSuffix = '',
+    List<String> extra = const [], String idSuffix = '', String? thumbnail,
   }) {
     final id = jobId(url, '$optionId$idSuffix');
     final existing = jobs[id];
@@ -190,6 +190,7 @@ class DownloadManager extends ChangeNotifier {
     final job = DownloadJob(id: id, url: url, title: title, optionId: optionId, optionLabel: label,
         dirPath: dir.path, isAudio: isAudio, ext: o.ext)
       ..extra = extra
+      ..thumbnail = thumbnail
       ..streams = o.streams
       ..idSuffix = idSuffix;
     File('${dir.path}/job.json').writeAsStringSync(jsonEncode({
@@ -291,7 +292,7 @@ class DownloadManager extends ChangeNotifier {
       }
       job..filePath = dest.path..publicUri = publicUri..status = JobStatus.done..percent = 100;
       history.add(HistoryEntry(id: job.id, type: job.isAudio ? 'audio' : 'video', title: job.title, file: finalName,
-          path: dest.path, url: job.url, optionId: job.optionId, bytes: bytes, at: DateTime.now().millisecondsSinceEpoch, publicUri: publicUri));
+          path: dest.path, url: job.url, optionId: job.optionId, bytes: bytes, at: DateTime.now().millisecondsSinceEpoch, publicUri: publicUri, thumbnail: job.thumbnail));
     } catch (e) {
       if (job.status != JobStatus.cancelled) {
         job..status = JobStatus.error..error = fromYtDlp(e).message;
@@ -357,7 +358,7 @@ class DownloadManager extends ChangeNotifier {
     final j = jobs[id];
     if (j == null || j.active) return j ?? (throw AppError('Unknown download.', 'NO_JOB'));
     jobs.remove(id);
-    return _enqueue(url: j.url, optionId: j.optionId, label: j.optionLabel, isAudio: j.isAudio, title: j.title, extra: j.extra, idSuffix: j.idSuffix);
+    return _enqueue(url: j.url, optionId: j.optionId, label: j.optionLabel, isAudio: j.isAudio, title: j.title, extra: j.extra, idSuffix: j.idSuffix, thumbnail: j.thumbnail);
   }
 
   DownloadJob resume(Map<String, dynamic> u) {
@@ -367,6 +368,12 @@ class DownloadManager extends ChangeNotifier {
       url: u['url'] as String, optionId: u['optionId'] as String, label: (u['label'] ?? u['optionId']) as String,
       isAudio: (u['isAudio'] as bool?) ?? (u['optionId'] as String).startsWith('a-'), title: (u['title'] ?? 'video') as String,
       extra: [for (final x in (u['extra'] as List? ?? const [])) x.toString()], idSuffix: (u['idSuffix'] ?? '') as String);
+  }
+
+  /// Removes finished jobs from the Downloads list only (files stay in History).
+  void clearFinishedJobs() {
+    jobs.removeWhere((_, j) => j.status == JobStatus.done);
+    _changed();
   }
 
   void discardUnfinished(String id) {
