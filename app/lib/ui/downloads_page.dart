@@ -128,7 +128,7 @@ class _ActiveCard extends StatelessWidget {
     }
 
     return AppCard(child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Thumb(url: job.thumbnail, size: 72, audio: job.isAudio, caption: job.ext.toUpperCase()),
+      MediaThumb(url: job.thumbnail, size: 72, audio: job.isAudio, caption: job.ext.toUpperCase()),
       const SizedBox(width: 14),
       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(job.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 17, fontWeight: FontWeight.w500, color: p.text)),
@@ -155,7 +155,7 @@ class _UnfinishedCard extends StatelessWidget {
     final m = context.read<DownloadManager>();
     final audio = (u['isAudio'] as bool?) ?? '${u['optionId']}'.startsWith('a-');
     return AppCard(child: Row(children: [
-      Thumb(size: 72, audio: audio),
+      MediaThumb(size: 72, audio: audio),
       const SizedBox(width: 14),
       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text('${u['title']}', maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 17, fontWeight: FontWeight.w500, color: p.text)),
@@ -184,7 +184,7 @@ class _DoneCard extends StatelessWidget {
     final size = _size();
     final path = job.filePath;
     return AppCard(child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Thumb(url: job.thumbnail, size: 72, audio: job.isAudio, caption: size.isEmpty ? job.ext.toUpperCase() : '${job.ext.toUpperCase()} • $size'),
+      MediaThumb(url: job.thumbnail, size: 72, audio: job.isAudio, caption: size.isEmpty ? job.ext.toUpperCase() : '${job.ext.toUpperCase()} • $size'),
       const SizedBox(width: 14),
       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(job.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 17, fontWeight: FontWeight.w500, color: p.text)),
