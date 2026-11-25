@@ -4,6 +4,7 @@ import 'services/download_manager.dart';
 import 'services/share_intake.dart';
 import 'services/ytdlp_bridge.dart';
 import 'ui/shell.dart';
+import 'ui/theme.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,8 +28,8 @@ class _State extends State<MultiDownloaderApp> {
         title: 'MultiDownloader',
         debugShowCheckedModeBanner: false,
         themeMode: _mode,
-        theme: ThemeData(colorSchemeSeed: Colors.red, useMaterial3: true),
-        darkTheme: ThemeData(colorSchemeSeed: Colors.red, useMaterial3: true, brightness: Brightness.dark),
+        theme: buildTheme(Brightness.light),
+        darkTheme: buildTheme(Brightness.dark),
         home: Shell(
           dark: _mode == ThemeMode.dark,
           onToggleTheme: () => setState(() => _mode = _mode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark),
