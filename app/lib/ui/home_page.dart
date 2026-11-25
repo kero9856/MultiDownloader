@@ -9,10 +9,11 @@ import '../services/share_intake.dart';
 import 'collections_views.dart';
 import 'format.dart';
 import 'preview_page.dart';
+import 'theme.dart';
 
 class HomePage extends StatefulWidget {
-  final VoidCallback onStarted;
-  const HomePage({super.key, required this.onStarted});
+  final VoidCallback onStarted, onMenu;
+  const HomePage({super.key, required this.onStarted, required this.onMenu});
   @override
   State<HomePage> createState() => _HomePageState();
 }
@@ -121,26 +122,46 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Widget _qualityChips(String title, List<QualityOption> list) => list.isEmpty ? const SizedBox() : Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(padding: const EdgeInsets.only(top: 16, bottom: 8), child: Text(title, style: Theme.of(context).textTheme.titleSmall)),
-          Wrap(spacing: 8, runSpacing: 8, children: [
-            for (final o in list)
-              ChoiceChip(
-                selected: _sel?.id == o.id,
-                onSelected: (_) => setState(() => _sel = o),
-                label: Column(mainAxisSize: MainAxisSize.min, children: [
-                  Text(o.label + (o.fps != null && o.fps! > 30 ? ' ${o.fps!.round()}fps' : '')),
-                  Text('${o.exact ? '' : '~'}${fmtBytes(o.estimatedBytes)}', style: Theme.of(context).textTheme.labelSmall),
-                ]),
-              ),
-          ]),
-        ],
+  Widget _section(String title) => Padding(
+        padding: const EdgeInsets.only(top: 22, bottom: 10),
+        child: Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Pal.of(context).text)),
       );
 
+  Widget _qualityChips(String title, List<QualityOption> list) {
+    if (list.isEmpty) return const SizedBox();
+    final p = Pal.of(context);
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      _section(title),
+      Wrap(spacing: 10, runSpacing: 10, children: [
+        for (final o in list)
+          InkWell(
+            borderRadius: BorderRadius.circular(14),
+            onTap: () => setState(() => _sel = o),
+            child: Container(
+              constraints: const BoxConstraints(minWidth: 96),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: _sel?.id == o.id ? p.chipSel : Colors.transparent,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: _sel?.id == o.id ? p.chipSel : p.border),
+              ),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                if (_sel?.id == o.id) Padding(padding: const EdgeInsets.only(right: 8), child: Icon(Icons.check, size: 20, color: p.chipSelText)),
+                Column(mainAxisSize: MainAxisSize.min, children: [
+                  Text(o.label + (o.fps != null && o.fps! > 30 ? ' ${o.fps!.round()}fps' : ''),
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: _sel?.id == o.id ? p.chipSelText : p.text)),
+                  Text('${o.exact ? '' : '~'}${fmtBytes(o.estimatedBytes)}',
+                      style: TextStyle(fontSize: 12, color: _sel?.id == o.id ? p.chipSelText : p.sub)),
+                ]),
+              ]),
+            ),
+          ),
+      ]),
+    ]);
+  }
+
   Widget _subtitles(VideoInfo info) => info.subtitles.isEmpty ? const SizedBox() : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Padding(padding: const EdgeInsets.only(top: 16, bottom: 8), child: Text('Subtitles', style: Theme.of(context).textTheme.titleSmall)),
+        _section('Subtitles'),
         Row(children: [
           Expanded(child: DropdownButton<SubtitleTrack>(
             isExpanded: true, value: _subSel,
@@ -155,26 +176,69 @@ class _HomePageState extends State<HomePage> {
         if (_subMsg != null) Padding(padding: const EdgeInsets.only(top: 6), child: Text(_subMsg!, style: Theme.of(context).textTheme.bodySmall)),
       ]);
 
+  /// Row of round site icons (scrolls sideways). Tapping one picks the site (needed for a bare @username).
+  Widget _sites() {
+    final p = Pal.of(context);
+    return SizedBox(
+      height: 60,
+      child: ListView(scrollDirection: Axis.horizontal, children: [
+        for (final name in AppConfig.sidebarSites)
+          if (siteByName(name) != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: Tooltip(
+                message: name,
+                child: GestureDetector(
+                  onTap: () => setState(() => _picked = _picked == name ? null : name),
+                  child: Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: _picked == name ? p.primary : Colors.transparent, width: 2)),
+                    child: SiteIcon(siteByName(name)!, size: 50),
+                  ),
+                ),
+              ),
+            ),
+      ]),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final p = Pal.of(context);
     final info = _info;
-    return ListView(padding: const EdgeInsets.all(16), children: [
-      Wrap(spacing: 8, children: [
-        for (final s in AppConfig.sidebarSites)
-          ChoiceChip(label: Text(s), selected: _picked == s, onSelected: (v) => setState(() => _picked = v ? s : null)),
+    return ListView(padding: const EdgeInsets.fromLTRB(20, 12, 20, 24), children: [
+      Row(children: [
+        Expanded(child: Text('MultiDownloader', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w500, color: p.text))),
+        IconButton(tooltip: 'Menu', icon: Icon(Icons.settings, color: p.text), onPressed: widget.onMenu),
       ]),
+      const SizedBox(height: 12),
+      _sites(),
       const SizedBox(height: 16),
       TextField(
         controller: _url, keyboardType: TextInputType.url, autocorrect: false,
+        style: TextStyle(color: p.text),
         decoration: InputDecoration(
-          border: const OutlineInputBorder(), labelText: 'Paste a video, playlist or account link',
-          suffixIcon: IconButton(icon: const Icon(Icons.content_paste), onPressed: _paste)),
+          hintText: 'Paste link here...',
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: p.border)),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: p.border)),
+          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: p.primary, width: 1.5)),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+          suffixIcon: TextButton.icon(onPressed: _paste, icon: Icon(Icons.content_paste, size: 20, color: p.sub), label: Text('Paste', style: TextStyle(color: p.sub, fontSize: 16))),
+        ),
         onSubmitted: (_) => _fetch(),
       ),
-      const SizedBox(height: 12),
-      FilledButton(onPressed: _busy ? null : () => _fetch(),
-          child: _busy ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Fetch Info')),
-      if (_error != null) Padding(padding: const EdgeInsets.only(top: 12), child: Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error))),
+      const SizedBox(height: 14),
+      SizedBox(
+        height: 54,
+        child: FilledButton(
+          style: FilledButton.styleFrom(backgroundColor: p.primary, foregroundColor: Colors.white, shape: const StadiumBorder()),
+          onPressed: _busy ? null : () => _fetch(),
+          child: _busy
+              ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+              : const Text('Analyze Link', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
+        ),
+      ),
+      if (_error != null) Padding(padding: const EdgeInsets.only(top: 12), child: Text(_error!, style: TextStyle(color: p.danger))),
       if (_playlist != null) Padding(padding: const EdgeInsets.only(top: 16), child: PlaylistView(playlist: _playlist!, onStarted: widget.onStarted)),
       if (_profile != null) Padding(padding: const EdgeInsets.only(top: 16), child: ProfileView(profile: _profile!, onOpenVideo: (u) => _fetch(u))),
       if (info != null) ...[
@@ -183,33 +247,56 @@ class _HomePageState extends State<HomePage> {
             const Expanded(child: Text('This video is part of a playlist.')),
             TextButton(onPressed: () => _fetch(_playlistHint), child: const Text('Load the whole playlist')),
           ])),
-        const SizedBox(height: 16),
-        Card(child: Padding(padding: const EdgeInsets.all(12), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          if (info.thumbnail != null)
-            ClipRRect(borderRadius: BorderRadius.circular(8),
-                child: Image.network(info.thumbnail!, width: 120, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox(width: 120, height: 68))),
-          const SizedBox(width: 12),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(info.title, maxLines: 3, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 4),
-            Text('${info.channel} · ${info.durationText}', style: Theme.of(context).textTheme.bodySmall),
-          ])),
-        ]))),
-        const SizedBox(height: 12),
-        TextField(controller: _name, maxLength: 100,
-            decoration: const InputDecoration(border: OutlineInputBorder(), labelText: 'Name of the saved file')),
+        const SizedBox(height: 18),
+        AppCard(
+          padding: const EdgeInsets.all(14),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Stack(children: [
+              Thumb(url: info.thumbnail, size: 96, height: 112),
+              Positioned(left: 6, bottom: 6, child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(color: const Color(0x99000000), borderRadius: BorderRadius.circular(8)),
+                child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 20),
+              )),
+              Positioned(right: 6, bottom: 6, child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                decoration: BoxDecoration(color: const Color(0x99000000), borderRadius: BorderRadius.circular(6)),
+                child: Text(info.durationText, style: const TextStyle(color: Colors.white, fontSize: 11)),
+              )),
+            ]),
+            const SizedBox(width: 14),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(info.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: p.text)),
+              const SizedBox(height: 4),
+              Text('${info.channel} • ${info.durationText}', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: p.sub)),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _name, maxLength: 100, style: TextStyle(color: p.text),
+                decoration: InputDecoration(
+                  hintText: 'Rename File', counterText: '', isDense: true,
+                  suffixIcon: Icon(Icons.edit_outlined, color: p.sub, size: 20),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: p.border)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: p.border)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                ),
+              ),
+            ])),
+          ]),
+        ),
         _qualityChips('Video Quality', info.video),
         _qualityChips('Audio Only', info.audio),
         _subtitles(info),
-        const SizedBox(height: 20),
+        const SizedBox(height: 24),
         Row(children: [
-          Expanded(child: OutlinedButton.icon(
+          Expanded(child: SizedBox(height: 54, child: OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(shape: const StadiumBorder(), side: BorderSide(color: p.border), foregroundColor: p.text),
             icon: const Icon(Icons.play_circle_outline), label: const Text('Watch'),
             onPressed: _sel == null || _sel!.isAudio ? null : () => Navigator.push(context, MaterialPageRoute(builder: (_) => PreviewPage(info: info, option: _sel!))),
-          )),
+          ))),
           const SizedBox(width: 12),
-          Expanded(flex: 2, child: FilledButton.icon(
-            icon: const Icon(Icons.download), label: Text('Download ${_sel?.label ?? ''}'),
+          Expanded(flex: 2, child: SizedBox(height: 54, child: FilledButton.icon(
+            style: FilledButton.styleFrom(backgroundColor: p.accent, foregroundColor: Colors.white, shape: const StadiumBorder()),
+            icon: const Icon(Icons.download), label: Text('Download ${_sel?.label ?? ''}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
             onPressed: _sel == null ? null : () {
               try {
                 context.read<DownloadManager>().start(info, _sel!, fileName: _name.text);
@@ -218,7 +305,7 @@ class _HomePageState extends State<HomePage> {
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
               }
             },
-          )),
+          ))),
         ]),
       ],
     ]);
